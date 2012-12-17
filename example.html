@@ -1,0 +1,193 @@
+<html>
+<head>
+
+	<title>import•io JavaScript client library sample</title>
+
+	<style>
+		body {
+			margin: 0; padding: 0;
+		}
+		div.section {
+			margin: 0 auto;
+			width: 800px;
+			padding: 0 10px;
+			height: 100%;
+		}
+		div.head {
+			margin: 0px auto;
+			padding: 10px 0;
+			width: 700px;
+		}
+		div.head p {
+			clear: both;
+		}
+		label {
+			float: left;
+			width: 300px;
+			display: block;
+		}
+		input, textarea {
+			width: 400px;
+			float: left;
+		}
+		ul {
+			list-style-type: none;
+		}
+	</style>
+    
+    <!-- Digest scripts.
+    These are only used for signing the request on the client - you shouldn't do this
+    in your production code. See http://docs.import.io/guide/authentication.html#signed_authentication
+    for how to do this in your favourite server language -->
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/hmac-sha1.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/enc-base64-min.js"></script>
+    
+    <!--  CometD dependencies (you'll need these) -->
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/cometd.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/AckExtension.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/ReloadExtension.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/jquery-1.7.2.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/json2.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/jquery.cometd.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/jquery.cometd-reload.js"></script>
+    <script type="text/javascript" src="//cdn.import.io/js/0.1/jquery.cometd-ack.js"></script>
+    
+    <!-- import.io library -->
+    <script type="text/javascript" src="importio.js"></script>
+
+	<script type="application/javascript">
+	
+	// Helper function to output stuff 
+	window.output = function (message, query) {
+		var src = "Unknown source";
+		var msg = "Unknown message";
+		var extras = "";
+		if (message.channel == "/meta") {
+			// Handle meta information 
+			src = "Meta";
+			switch (message.data.type) {
+				case "CONNECTION_ESTABLISHED":
+					msg = "Connection established";
+					break;
+				case "CONNECTION_BROKEN":
+					msg = "Connection broken";
+					break;
+				case "CONNECTION_CLOSED":
+					msg = "Connection closed";
+					break;
+				case "NO_QUERY":
+					msg = "There is not a valid query";
+					break;
+				case "SUBSCRIBED":
+					msg = "Subscribed";
+					break;
+				
+			}
+		} else {
+			// Handle messages from server 
+			src = "Server";
+			switch (message.data.type) {
+				case "INIT":
+					msg = "Job initialised";
+					break;
+				case "SPAWN":
+					msg = "New job will be started";
+					break;
+				case "START":
+					msg = "New job started";
+					break;
+				case "STOP":
+					msg = "Job finished";
+					break;
+				case "ERROR":
+					msg = "An error occurred";
+					break;
+				case "UNAUTH":
+					msg = "Not authenticated";
+					break;
+				case "CHALLENGE":
+					msg = "Challenge sent";
+					break;
+				case "MESSAGE":
+					console.log(message);
+					msg = "Message received, containing " + message.data.data.results.length + " items";
+					for (var i = 0; i < message.data.data.results.length; i++) {
+						var item = message.data.data.results[i];
+						extras += "<li><a href=\"" + item._url + "\">Result:</a><br />";
+						delete item._url;
+						for (var k in item) {
+							extras += k + ": " + item[k] + "<br />";
+						}
+						extras += "</li>";
+					}
+					break;
+			}
+		}
+		$("#messages").append("<li><strong>" + src + ": </strong>" + msg + "</li>" + extras);
+	}
+	
+	// Start the client library 
+	var importio = new importio(window.output);
+	
+	// This function should DEFINITELY happen on a server. 
+	// It is safe to take the insides of this function and replace 
+	// it with a call to your server, so long as it is setup as we 
+	// describe on our docs: http://docs.import.io/guide/authentication.html#signed_authentication 
+	function sign(query) {
+	    
+	    var signed_query = {
+			queryJson: query,
+			expiresAt: new Date().getTime() + 10 * 60 * 1000,
+			userGuid: $("#userguid").val(),
+			orgGuid: "00000000-0000-0000-0000-000000000000"
+		}
+	    
+	    var key = $('#apikey').val()
+	    var check = signed_query.queryJson+":"+signed_query.userGuid+":"+signed_query.orgGuid+":"+signed_query.expiresAt;
+	    signed_query.digest = CryptoJS.HmacSHA1(check, CryptoJS.enc.Base64.parse(key)).toString(CryptoJS.enc.Base64);
+	    
+	    return signed_query;
+	}
+	
+	// Helper function to start a query 
+	function go() {
+	
+	    var query = $('#query').val()
+	    var signed_query = sign(query);
+	    
+	    $('#signed_query').val( JSON.stringify(signed_query, null, 4));
+	    
+		importio.query( signed_query, window.output);
+		
+	}
+	</script>
+
+</head>
+<body>
+
+<div class="section">
+	<div class="head">
+		<p><label for="userguid">User GUID</label><input id="userguid" value="" /></p>
+		<p><label for="apikey">API Key</label><input id="apikey" value="" /></p>
+		<p><label for="query">Query</label><textarea id="query" rows="10" cols="50">{
+    "input": {
+        "location/street_address/postal_code/postal_code": "ip2 0tg"
+    },
+    "connectorGuids": [
+        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+        "096c7e66-2577-4fb0-93f8-a3aa06620049",
+        "fd48e701-d48f-4b7c-872c-1381cde86ba4",
+        "090a188c-2894-43de-88bb-5bc1c2097d8d",
+        "7874dc2b-f2c2-4527-a2f7-22419399c8c3",
+        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+    ]
+}</textarea></p>
+		<p><label for="signed_query">Signed Query</label><textarea id="signed_query" rows="10" cols="50" disabled="disabled"></textarea></p>
+		<p><button onclick="go();">Execute Query</button></p>
+	</div>
+	<ul id="messages">
+	</ul>
+</div>
+</body>
+</html>
