@@ -1,0 +1,50 @@
+<html>
+<head>
+
+	<title>Example - Callback Object</title>
+
+    <!-- Importio lib -->
+    <script src="//d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js"></script>
+
+	<script>
+	// You can init the library any way you like here
+	importio.init({"auth": {
+		"userGuid": "YOUR_GUID",
+		"apiKey": "YOUR_API_KEY"
+	}});
+	// You can pass the callbacks you want for the query into the query function itself
+	importio.query({
+	    "input": {
+	        "location/street_address/postal_code/postal_code": "ec1y 2bj"
+	    },
+	    "connectorGuids": [
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+	    ]
+	}, {
+		"done": function(data) {
+			console.log("Done callback with data", data);
+		},
+		"fail": function(code, msg) {
+			console.log("Fail callback with error code and optional message", code, msg);
+		},
+		"always": function(success, a, b) {
+			console.log("Always callback with success flag. If successful, a is the data. If not, a is the error code, and b is the message", success, a, b);
+		},
+		"message": function(message) {
+			console.log("Message callback for every CometD message", message.type, message);
+		},
+		"data": function(data) {
+			console.log("Data callback for each data message", data);
+		},
+		"progress": function(percentage, completed, total) {
+			console.log("Progress with a percentag and how many completed out of what total", percentage, completed, total);
+		},
+		"start": function() {
+			console.log("Start callback when the query is actually started off");
+		}
+	});
+	</script>
+
+</head>
+<body>

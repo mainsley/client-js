@@ -1,0 +1,67 @@
+<html>
+<head>
+
+	<title>Example - Callback Chaining and Callback Object - together!</title>
+
+    <!-- Importio lib -->
+    <script src="//d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js"></script>
+
+	<script>
+	// You can init the library any way you like here
+	importio.init({"auth": {
+		"userGuid": "YOUR_GUID",
+		"apiKey": "YOUR_API_KEY"
+	}});
+	// You can provide any of the callbacks in the object and chain up any you like, they all come out in the wash
+	importio.query({
+	    "input": {
+	        "location/street_address/postal_code/postal_code": "ec1y 2bj"
+	    },
+	    "connectorGuids": [
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+	    ]
+	}, {
+		"done": function(data) {
+			console.log("=== A ===", "Done callback with data", data);
+		},
+		"fail": function(code, msg) {
+			console.log("=== A ===", "Fail callback with error code and optional message", code, msg);
+		},
+		"always": function(success, a, b) {
+			console.log("=== A ===", "Always callback with success flag. If successful, a is the data. If not, a is the error code, and b is the message", success, a, b);
+		},
+		"message": function(message) {
+			console.log("=== A ===", "Message callback for every CometD message", message.type, message);
+		},
+		"data": function(data) {
+			console.log("=== A ===", "Data callback for each data message", data);
+		},
+		"progress": function(percentage, completed, total) {
+			console.log("=== A ===", "Progress with a percentag and how many completed out of what total", percentage, completed, total);
+		},
+		"start": function() {
+			console.log("=== A ===", "Start callback when the query is actually started off");
+		}
+	}).done(function(data) {
+		console.log("=== B ===", "Done callback with data", data);
+	}).fail(function(code, msg) {
+		console.log("=== B ===", "Fail callback with error code and optional message", code, msg);
+	}).always(function(success, a, b) {
+		console.log("=== B ===", "Always callback with success flag. If successful, a is the data. If not, a is the error code, and b is the message", success, a, b);
+	}).message(function(message) {
+		// This is a custom promise method, which you won't find on standard jQuery promises. Snazzy!
+		console.log("=== B ===", "Message callback for every CometD message", message.type, message);
+	}).data(function(data) {
+		// This is also a custom promise method
+		console.log("=== B ===", "Data callback for each data message", data);
+	}).progress(function(percentage, completed, total) {
+		console.log("=== B ===", "Progress with a percentag and how many completed out of what total", percentage, completed, total);
+	}).start(function() {
+		// Another custom promise method
+		console.log("=== B ===", "Start callback when the query is actually started off");
+	});
+	</script>
+
+</head>
+<body>

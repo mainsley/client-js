@@ -1,0 +1,198 @@
+<html>
+<head>
+
+	<title>Example - Signed Auth</title>
+
+	<style>
+		body {
+			margin: 0; padding: 0;
+			font-family: sans-serif;
+		}
+		div.section {
+			margin: 0 auto;
+			width: 800px;
+			padding: 0 10px;
+			height: 100%;
+		}
+		div.head {
+			margin: 0px auto;
+			padding: 10px 0;
+			width: 700px;
+		}
+		div.head p {
+			clear: both;
+		}
+		label {
+			float: left;
+			width: 300px;
+			display: block;
+		}
+		input, textarea {
+			width: 400px;
+			float: left;
+		}
+		ul {
+			list-style-type: none;
+		}
+	</style>
+    
+    <!-- Importio lib -->
+    <script src="//d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js"></script>
+    
+    <!-- jQuery, Knockout, Bootstrap to help out -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="//ajax.aspnetcdn.com/ajax/knockout/knockout-2.2.1.js"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+    
+	<script>
+	var example = (function($, ko, importio) {
+		
+		// Initialisation function
+		function init() {
+			initialised(true);
+			// Init with the User GUID and API Key
+			importio.init({
+				"auth": {
+					"userGuid": userGuid(),
+					"apiKey": apiKey()
+				}
+			});
+		}
+		
+		// Execute a query
+		function execute() {
+			messages([]);
+			data(false);
+			importio.query(JSON.parse(query())).message(msg).done(done);
+		}
+
+		// Handle a message
+		function msg(message) {
+			messages.push(message);
+		}
+		
+		function done(d) {
+			data(JSON.stringify(d, null, '\t'));
+		}
+		
+		// For user auth
+		var userGuid = ko.observable("");
+		var apiKey = ko.observable("");
+		
+		// Whether or not to show messages
+		var showMessages = ko.observable(true);
+		
+		// Messages returned from the server
+		var messages = ko.observableArray([]);
+		
+		// Whether or not the library has been initialised
+		var initialised = ko.observable(false);
+		
+		// The final data
+		var data = ko.observable(false);
+		
+		// The query
+		var query = ko.observable(JSON.stringify({
+		    "input": {
+		        "location/street_address/postal_code/postal_code": "ip2 0tg"
+		    },
+		    "connectorGuids": [
+		        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+		        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+		    ]
+		}, null, '\t'));
+		
+		return {
+			init: init,
+			execute: execute,
+			userGuid: userGuid,
+			apiKey: apiKey,
+			messages: messages,
+			showMessages: showMessages,
+			initialised: initialised,
+			data: data,
+			query: query
+		}
+		
+	})($, ko, importio);
+	$(function() {
+		ko.applyBindings(example);
+	});
+	</script>
+
+</head>
+<body>
+
+	<div class="container">
+		<div class="row">
+			<div class="span4"></div>
+			<div class="span4">
+				<h4>First, init() the library</h4>
+				<p>Only do this once per page load!</p>
+				<p>To get your User GUID, <a href="http://import.io/auth/login">log in to import.io</a> then <a href="http://api.import.io/auth/currentuser" target="_blank">click here</a>.</p>
+				<p>To find out how to get your API key, <a href="http://docs.import.io/reference/auth.html#heading-getapikey" target="_blank">click here</a>.</p>
+				<form class="form-horizontal">
+					<div class="control-group">
+						<label class="control-label" for="userGuid">User GUID</label>
+						<div class="controls">
+							<input type="text" id="userGuid" placeholder="" data-bind="value: userGuid, enable: !initialised()">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label" for="apiKey">API Key</label>
+						<div class="controls">
+							<input type="text" id="apiKey" placeholder="" data-bind="value: apiKey, enable: !initialised()">
+						</div>
+					</div>
+					<div class="control-group">
+						<div class="controls">
+							<label class="checkbox">
+								<input type="checkbox" data-bind="checked: showMessages"> Show individual messages
+							</label>
+							<button type="submit" class="btn" data-bind="click: init, enable: !initialised()">Initialise</button>
+						</div>
+					</div>
+				</form>
+				<h4>Then, do your query</h4>
+				<form>
+					<div class="control-group">
+						<label class="control-label" for="query">Query</label>
+						<div class="controls">
+							<textarea rows="5" class="span4" data-bind="value: query"></textarea>
+						</div>
+					</div>
+					<div class="control-group">
+						<div class="controls">
+							<button type="submit" class="btn" data-bind="click: execute, enable: initialised">Execute query</button>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="span4"></div>
+		</div>
+		<div class="row" data-bind="visible: showMessages">
+			<div class="span2"></div>
+			<div class="span8">
+				<h4>Messages</h4>
+				<p>This shows you all of the CometD messages that come back from the server. Unless you really need this information, you don't need to handle them individually.</p>
+				<ul class="nav nav-tabs nav-stacked" data-bind="foreach: messages">
+					<li>
+						<a href="#" class="clearfix"><span class="pull-left" data-bind="text: type"></span><span class="pull-right">Request ID: <span data-bind="text: requestId"></span></span></a>
+					</li>
+				</ul>
+			</div>
+			<div class="span2"></div>
+		</div>
+		<div class="row">
+			<div class="span2"></div>
+			<div class="span8">
+				<h4>Complete data</h4>
+				<p>This is the complete data that was returned from the query.</p>
+				<textarea rows="30" class="span8" data-bind="value: data"></textarea>
+			</div>
+			<div class="span2"></div>
+		</div>
+	</div>
+
+</body>
+</html>

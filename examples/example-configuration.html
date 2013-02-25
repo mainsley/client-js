@@ -1,0 +1,35 @@
+<html>
+<head>
+
+	<title>Example - Configration</title>
+
+    <!-- Importio lib -->
+    <script src="//d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js"></script>
+
+	<script>
+	// Here are all of the options you can provide to init. Check the docs for what they do
+	importio.init({
+		"auth": {
+			"userGuid": "YOUR_GUID",
+			"apiKey": "YOUR_API_KEY"
+		},
+		"logging": false,
+		"connectionCallback": console.log,
+		"timeout": 60
+	});
+	// A query, to prove it works :-)
+	importio.query({
+	    "input": {
+	        "location/street_address/postal_code/postal_code": "ec1y 2bj"
+	    },
+	    "connectorGuids": [
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+	    ]
+	}, function(data) {
+		console.log("Done callback with data", data);
+	});
+	</script>
+
+</head>
+<body>

@@ -1,0 +1,78 @@
+<html>
+<head>
+
+	<title>Example - Query Chaining</title>
+
+    <!-- Importio lib -->
+    <script src="//d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js"></script>
+    
+    <!-- Need jQuery for this demo too -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+	<script>
+	// You can init the library any way you like here
+	importio.init({"auth": {
+		"userGuid": "YOUR_GUID",
+		"apiKey": "YOUR_API_KEY"
+	}});
+	// importio.query actually returns a jQuery promise - here we wait for all of the queries to finish
+	var q1 = importio.query({
+	    "input": {
+	        "location/street_address/postal_code/postal_code": "ec1y 2bj"
+	    },
+	    "connectorGuids": [
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "096c7e66-2577-4fb0-93f8-a3aa06620049",
+	        "fd48e701-d48f-4b7c-872c-1381cde86ba4",
+	        "090a188c-2894-43de-88bb-5bc1c2097d8d",
+	        "7874dc2b-f2c2-4527-a2f7-22419399c8c3",
+	        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+	    ]
+	});
+	
+	var q2 = importio.query({
+	    "input": {
+	        "location/street_address/postal_code/postal_code": "ip2 0tg"
+	    },
+	    "connectorGuids": [
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "096c7e66-2577-4fb0-93f8-a3aa06620049",
+	        "fd48e701-d48f-4b7c-872c-1381cde86ba4",
+	        "090a188c-2894-43de-88bb-5bc1c2097d8d",
+	        "7874dc2b-f2c2-4527-a2f7-22419399c8c3",
+	        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+	    ]
+	});
+	
+	var q3 = importio.query({
+	    "input": {
+	        "location/street_address/postal_code/postal_code": "ec2m 4tp"
+	    },
+	    "connectorGuids": [
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "a9b2f9b7-09e3-487b-a9c1-d54f8c569178",
+	        "096c7e66-2577-4fb0-93f8-a3aa06620049",
+	        "fd48e701-d48f-4b7c-872c-1381cde86ba4",
+	        "090a188c-2894-43de-88bb-5bc1c2097d8d",
+	        "7874dc2b-f2c2-4527-a2f7-22419399c8c3",
+	        "e7b6ea68-e52d-4639-bf02-f1952412ae70"
+	    ]
+	});
+	
+	$.when(q1, q2, q3).then(function(d1, d2, d3) {
+		console.log("Got all results: ", d1, d2, d3);
+	});
+	
+	// Have an array of queries you want to wait for?
+	// E.g. var queries = [q1, q2, q3]
+	// But not sure how many queries there will be?
+	// You can use the apply function to do this:
+	// $.when.apply(this, queries).then(...);
+	// :D
+	
+	</script>
+
+</head>
+<body>
