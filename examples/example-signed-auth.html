@@ -1,49 +1,6 @@
-<html>
-<head>
-
-	<title>Example - Signed Auth</title>
-
-	<style>
-		body {
-			margin: 0; padding: 0;
-			font-family: sans-serif;
-		}
-		div.section {
-			margin: 0 auto;
-			width: 800px;
-			padding: 0 10px;
-			height: 100%;
-		}
-		div.head {
-			margin: 0px auto;
-			padding: 10px 0;
-			width: 700px;
-		}
-		div.head p {
-			clear: both;
-		}
-		label {
-			float: left;
-			width: 300px;
-			display: block;
-		}
-		input, textarea {
-			width: 400px;
-			float: left;
-		}
-		ul {
-			list-style-type: none;
-		}
-	</style>
-    
-    <!-- Importio lib -->
-    <script src="//d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js"></script>
-    
-    <!-- jQuery, Knockout, Bootstrap to help out -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script src="//ajax.aspnetcdn.com/ajax/knockout/knockout-2.2.1.js"></script>
-    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
-    
+---
+layout: base
+---
 	<script>
 	var example = (function($, ko, importio) {
 		
@@ -120,13 +77,11 @@
 	});
 	</script>
 
-</head>
-<body>
-
 	<div class="container">
 		<div class="row">
 			<div class="span4"></div>
 			<div class="span4">
+				<p>View my source <a href="https://github.com/import-io/client-js/blob/master/examples/example-signed-auth.html">on Github</a>.</p>
 				<h4>First, init() the library</h4>
 				<p>Only do this once per page load!</p>
 				<p>To get your User GUID, <a href="http://import.io/auth/login">log in to import.io</a> then <a href="http://api.import.io/auth/currentuser" target="_blank">click here</a>.</p>
@@ -193,6 +148,3 @@
 			<div class="span2"></div>
 		</div>
 	</div>
-
-</body>
-</html>
