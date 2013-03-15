@@ -7,7 +7,11 @@ Use this client library to access [import.io](http://data.import.io) from client
 
 Check out the examples directory - there are plenty of things you can do, and some nice demos of integration!
 
-We recommend you run all demos from a browser through some kind of server. This can be as simple as starting up a local webserver in the examples directory, e.g.:
+The easiest way to check out the interactive demos is through our [hosted version of them](http://docs.import.io/client-js/).
+
+You can also run the demos from your own machine - we recommend you run all demos from a browser through some kind of server.
+
+This can be as simple as starting up a local webserver in the examples directory, e.g.:
 
     php -S 0.0.0.0:8000
 
