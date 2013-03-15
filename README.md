@@ -23,7 +23,7 @@ We provide a minified single-file library which includes all of its own dependen
 
 The current production version is at:
 
-    //d7xe6yl2ckrgs.cloudfront.net/js/1/importio.js
+    //d7xe6yl2ckrgs.cloudfront.net/js/2/importio.js
     
 Note this URL supports both http and https, but will not work in your browser if you are loading the HTML file from your hard disk.
 
