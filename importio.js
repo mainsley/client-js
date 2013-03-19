@@ -247,6 +247,7 @@ var importio = (function($) {
 	// Default configuration
 	var defaultConfiguration = {
 		"host": "query.import.io",
+		"hostPrefix": "",
 		"port": 80,
 		"logging": false,
 		"https": false,
@@ -257,7 +258,11 @@ var importio = (function($) {
 	// Store the current configuration
 	var currentConfiguration = {};
 	
+	// Queue of functions to be called after initialisation
 	var initialisationQueue = [];
+	
+	// Cache of the endpoint to hit in this session
+	var endpoint = false;
 	
 	//******************************
 	//********** Private methods ***
@@ -281,10 +286,38 @@ var importio = (function($) {
 		}
 	}
 	
+	// Generates a random domain endpoint
+	function randomDomain() {
+	    var domain = "";
+	    var options = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+	    for( var i=0; i < 30; i++ ) {
+	    	domain += options.charAt(Math.floor(Math.random() * options.length));
+	    }
+
+	    return domain;
+	}
+	
 	// Return the comet endpoint
 	function getCometEndpoint() {
+		if (endpoint) {
+			return endpoint;
+		}
 		checkInit();
-		return log("http" + (currentConfiguration.https ? "s" : "") + "://" + currentConfiguration.host + ":" + currentConfiguration.port + "/query/comet");
+		// Max length out the prefix the user specifies = 20 + 1 characters
+		var prefix = currentConfiguration.hostPrefix;
+		prefix = prefix.length > 20 ? prefix.substring(0, 20) : prefix;
+		prefix = prefix.length > 0 ? prefix + "-" : "";
+		// Get the domain of the page, but only if it exists = 20 + 1 characters
+		var domain = (window.location.hostname ? window.location.hostname.replace(/\./g, "") : "");
+		domain = domain.length > 20 ? domain.substring(0, 20) : domain;
+		domain = domain.length > 0 ? domain + "-" : "";
+		// Generate the special subdomain, from the user's prefix + the domain + the random string = 21 + 21 + 20 = 62
+		var specialHost = prefix + domain + randomDomain();
+		// Generate the entire host, the special subdomain + the configured query server
+		var host = specialHost + "." + currentConfiguration.host;
+		endpoint = "http" + (currentConfiguration.https ? "s" : "") + "://" + host + ":" + currentConfiguration.port + "/query/comet";
+		return log(endpoint);
 	}
 	
 	// Log some output, if allowed; returns content irrespective of logging
@@ -316,11 +349,7 @@ var importio = (function($) {
 		
 		// Add unload handler
 		$(window).bind('beforeunload', function() {
-			if ($.cometd.reload) {
-				$.cometd.reload();
-			} else {
-				$.cometd.disconnect();
-			}
+			$.cometd.disconnect();
 		}); 
 		
 		comet.started = true;
