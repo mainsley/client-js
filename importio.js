@@ -83,7 +83,7 @@ var importio = (function($) {
 		function doStart(type, query) {
 			query.requestId = id;
 			$.cometd.publish("/service/" + type, query);
-			deferred.sendStart();
+			//deferred.sendStart();
 			timer = setTimeout(function() {
 				if (!finished) {
 					done();
@@ -142,7 +142,7 @@ var importio = (function($) {
 				finished = true;
 			}
 			
-			deferred.sendMessage(message);
+			//deferred.sendMessage(message);
 			
 			if (finished) {
 				done();
@@ -175,7 +175,7 @@ var importio = (function($) {
 				};
 			}
 			results = results.concat(res);
-			deferred.sendData(res);
+			//deferred.sendData(res);
 		}
 		
 		// Handles done events
@@ -248,9 +248,10 @@ var importio = (function($) {
 	var defaultConfiguration = {
 		"host": "query.import.io",
 		"hostPrefix": "",
-		"port": 80,
+		"randomHost": true,
+		"port": false,
 		"logging": false,
-		"https": false,
+		"https": true,
 		"connectionCallback": log,
 		"timeout": 60
 	};
@@ -304,24 +305,41 @@ var importio = (function($) {
 			return endpoint;
 		}
 		checkInit();
-		// Max length out the prefix the user specifies = 20 + 1 characters
+		
+		// Max length of the prefix the user specifies = 20 (+1) characters
 		var prefix = currentConfiguration.hostPrefix;
 		prefix = prefix.length > 20 ? prefix.substring(0, 20) : prefix;
 		prefix = prefix.length > 0 ? prefix + "-" : "";
-		// Get the domain of the page, but only if it exists = 20 + 1 characters
+		
+		// Get the domain of the page, but only if it exists = 20 (+1) characters
 		var domain = (window.location.hostname ? window.location.hostname.replace(/\./g, "") : "");
 		domain = domain.length > 20 ? domain.substring(0, 20) : domain;
 		domain = domain.length > 0 ? domain + "-" : "";
+		
 		// Generate the special subdomain, from the user's prefix + the domain + the random string = 21 + 21 + 20 = 62
 		var specialHost = prefix + domain + randomDomain();
+		
 		// Generate the entire host, the special subdomain + the configured query server
-		var host = specialHost + "." + currentConfiguration.host;
-		endpoint = "http" + (currentConfiguration.https ? "s" : "") + "://" + host + ":" + currentConfiguration.port + "/query/comet";
+		var host = currentConfiguration.randomHost ? specialHost + "." + currentConfiguration.host : currentConfiguration.host;
+		
+		var port = currentConfiguration.port;
+		if (!currentConfiguration.port) {
+			if (currentConfiguration.https) {
+				port = 443;
+			} else {
+				port = 80;
+			}
+		}
+		
+		var protocol = "http" + (currentConfiguration.https ? "s": "");
+		
+		endpoint = protocol + "://" + host + ":" + port + "/query/comet";
+		
 		return log(endpoint);
 	}
 	
 	// Log some output, if allowed; returns content irrespective of logging
-	function log(content, e, x, t, r, a, s) {
+	function log(content) {
 		checkInit();
 		if (currentConfiguration.logging && window.console && console.log) {
 			console.log(content);
@@ -438,7 +456,7 @@ var importio = (function($) {
 	
 	// Allows a user to start off a query
 	function query(query, callbacks) {
-		var deferred = $.Deferred(false, [["sendMessage", "message"], ["sendStart", "start"], ["sendData", "data"]]);
+		var deferred = $.Deferred(false);
 		deferred = augmentDeferred(deferred, callbacks);
 		// Make the CBs go into the promise
 		checkInit(function() {
@@ -456,11 +474,6 @@ var importio = (function($) {
 		return defaultConfiguration;
 	}
 	
-	// Allow users to get our jQuery object if they want it
-	function jQuery() {
-		return $;
-	}
-	
 	//******************************
 	//********** Return variables **
 	//******************************
@@ -469,8 +482,6 @@ var importio = (function($) {
 		init: init,
 		query: query,
 		getDefaultConfiguration: getDefaultConfiguration,
-		jQuery: jQuery
 	};
 	
-})(iojq);
-delete iojq;
+})(jQuery);

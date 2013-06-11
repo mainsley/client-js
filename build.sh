@@ -1,15 +1,9 @@
 #!/bin/bash
 
-rm -rf dist
-mkdir dist
+rm dist/importio.js
 
-uglifyjs lib/jquery.min.js \
-			lib/cometd.js \
-			lib/AckExtension.js \
-			lib/ReloadExtension.js \
-			lib/json2.js \
-			lib/jquery.cometd.js \
-			lib/jquery.cometd-ack.js \
-			lib/iojq.js lib/hmac-sha1.js \
-			lib/enc-base64-min.js \
-			importio.js -o dist/importio.js -c -m
+cat lib/cometd.js lib/AckExtension.js lib/ReloadExtension.js lib/json2.js lib/jquery.cometd.js lib/jquery.cometd-ack.js lib/hmac-sha1.js lib/enc-base64-min.js importio.js > dist/io.js
+
+uglifyjs -o dist/importio.js dist/io.js
+
+rm dist/io.js
