@@ -594,6 +594,7 @@ var importio = (function($) {
 			}
 		}
 		iface.create = iface.object().create;
+		iface.children = iface.object().children;
 		return iface;
 	}
 	
