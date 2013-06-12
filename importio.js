@@ -9,6 +9,12 @@ var importio = (function($) {
 	//********** Private classes ***
 	//******************************
 	
+	$(document).ajaxSend(function (event, xhr, settings) {
+		settings.xhrFields = {
+			withCredentials: true
+		};
+	});
+	
 	// Encapsulates a query
 	var q = function($, config, query, deferred, sys_finished) {
 
@@ -246,7 +252,7 @@ var importio = (function($) {
 	
 	// Default configuration
 	var defaultConfiguration = {
-		"host": "query.import.io",
+		"host": "import.io",
 		"hostPrefix": "",
 		"randomHost": true,
 		"port": false,
@@ -257,7 +263,7 @@ var importio = (function($) {
 	};
 	
 	// Store the current configuration
-	var currentConfiguration = {};
+	var currentConfiguration = defaultConfiguration;
 	
 	// Queue of functions to be called after initialisation
 	var initialisationQueue = [];
@@ -320,7 +326,7 @@ var importio = (function($) {
 		var specialHost = prefix + domain + randomDomain();
 		
 		// Generate the entire host, the special subdomain + the configured query server
-		var host = currentConfiguration.randomHost ? specialHost + "." + currentConfiguration.host : currentConfiguration.host;
+		var host = currentConfiguration.randomHost ? specialHost + ".query." + currentConfiguration.host : "query." + currentConfiguration.host;
 		
 		var port = currentConfiguration.port;
 		if (!currentConfiguration.port) {
@@ -474,6 +480,110 @@ var importio = (function($) {
 		return defaultConfiguration;
 	}
 	
+	// API aliasing
+	function bucket(b) {
+		var bucketName = b;
+		function getEndpoint(path) {
+			var port = currentConfiguration.port;
+			if (!currentConfiguration.port) {
+				if (currentConfiguration.https) {
+					port = 443;
+				} else {
+					port = 80;
+				}
+			}
+			
+			return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
+		}
+		function objToParams(params) {
+			var p = "";
+			if (params) {
+				var append = [];
+				for (var k in params) {
+					if (params.hasOwnProperty(k)) { // Check param is valid
+						if (params[k]) { // Skip if its undefined or falsey
+							if (!(params[k] instanceof Array)) { // Convert to array in case there is only one
+								params[k] = [params[k]]
+							}
+							params[k].map(function(p) {
+								append.push(k + "=" + p); // Push each one on to the list
+							})
+						}
+					}
+				}
+				p += append.join("&");
+			}
+			return p;
+		}
+		var iface = {
+			"search": function(term, params) {
+				var path = "/store/" + bucketName + "/_search?";
+				params.q = term;
+				path += objToParams(params);
+				return $.get(getEndpoint(path));
+			},
+			"list": function(key, val, offset) {
+				var params = {
+					"index": key,
+					"index_value": val
+				}
+				if (offset) {
+					params["index_offset"] = [val, offset];
+				}
+				var path = "/store/" + bucketName + "?" + objToParams(params);
+				return $.get(getEndpoint(path));
+			},
+			"object": function(g) {
+				var guid = g;
+				function doAjax(method, parameters) {
+					return $.ajax(getEndpoint("/store/" + bucketName + (guid ? "/" + guid : "")), {
+						"type": method,
+						"contentType": parameters ? "json" : undefined,
+						"data": parameters ? JSON.stringify(parameters) : undefined
+					});
+				}
+				var iface = {
+					"get": function() {
+						return doAjax("GET");
+					},
+					"post": function(params) {
+						return doAjax("POST", params);
+					},
+					"put": function(params) {
+						return doAjax("PUT", params);
+					},
+					"patch": function(params) {
+						return doAjax("PATCH", params)
+					},
+					"del": function() {
+						return doAjax("DELETE");
+					},
+					"plugin": function(plugin, method, params) {
+						var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/_" + plugin;
+						var data;
+						if (method.toLowerCase() == "get") {
+							path += objToParams(params);
+						} else {
+							data = JSON.stringify(params);
+						}
+						return $.ajax(getEndpoint(path), {
+							"type": method,
+							"data": data
+						});
+					}
+				};
+				iface.read = iface.get;
+				iface.create = iface.post;
+				iface.update = iface.put;
+				iface.tweak = iface.patch;
+				iface.remove = iface.del;
+				return iface;
+			}
+		}
+		iface.create = iface.object().create;
+		return iface;
+	}
+	
 	//******************************
 	//********** Return variables **
 	//******************************
@@ -482,6 +592,7 @@ var importio = (function($) {
 		init: init,
 		query: query,
 		getDefaultConfiguration: getDefaultConfiguration,
+		bucket: bucket
 	};
 	
 })(jQuery);
