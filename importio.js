@@ -598,6 +598,7 @@ var importio = (function($) {
 		}
 		iface.create = iface.object().create;
 		iface.children = iface.object().children;
+		iface.plugin = iface.object().plugin;
 		return iface;
 	}
 	
