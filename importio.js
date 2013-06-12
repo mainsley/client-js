@@ -263,7 +263,10 @@ var importio = (function($) {
 	};
 	
 	// Store the current configuration
-	var currentConfiguration = defaultConfiguration;
+	var currentConfiguration = {};
+	for (var k in defaultConfiguration) {
+		currentConfiguration[k] = defaultConfiguration[k];
+	}
 	
 	// Queue of functions to be called after initialisation
 	var initialisationQueue = [];
@@ -618,6 +621,13 @@ var importio = (function($) {
 		init: init,
 		query: query,
 		getDefaultConfiguration: getDefaultConfiguration,
+		getConfiguration: function() {
+			var ret = {};
+			for (var k in currentConfiguration) {
+				ret[k] = currentConfiguration[k];
+			}
+			return ret;
+		},
 		bucket: bucket,
 		auth: auth
 	};
