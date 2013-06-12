@@ -577,7 +577,7 @@ var importio = (function($) {
 						var childName = name;
 						var iface = {
 							"get": function(params) {
-								var path = "/store/" + bucketName + "/" + guid + "/" + childName + objToParams(params, "?");
+								var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/" + childName + objToParams(params, "?");
 								return $.get(getEndpoint(path));
 							}
 						};
