@@ -497,7 +497,7 @@ var importio = (function($) {
 	// API aliasing
 	function bucket(b) {
 		var bucketName = b;
-		function objToParams(params) {
+		function objToParams(params, existPrefix) {
 			var p = "";
 			if (params) {
 				var append = [];
@@ -513,7 +513,7 @@ var importio = (function($) {
 						}
 					}
 				}
-				p += append.join("&");
+				p += (existPrefix ? existPrefix : "") + append.join("&");
 			}
 			return p;
 		}
@@ -532,7 +532,7 @@ var importio = (function($) {
 				if (offset) {
 					params["index_offset"] = [val, offset];
 				}
-				var path = "/store/" + bucketName + "?" + objToParams(params);
+				var path = "/store/" + bucketName + objToParams(params, "?");
 				return $.get(getEndpoint(path));
 			},
 			"object": function(g) {
@@ -564,7 +564,7 @@ var importio = (function($) {
 						var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/_" + plugin;
 						var data;
 						if (method.toLowerCase() == "get") {
-							path += objToParams(params);
+							path += objToParams(params, "?");
 						} else {
 							data = JSON.stringify(params);
 						}
@@ -572,6 +572,17 @@ var importio = (function($) {
 							"type": method,
 							"data": data
 						});
+					},
+					"children": function(name) {
+						var childName = name;
+						var iface = {
+							"get": function(params) {
+								var path = "/store/" + bucketName + "/" + guid + "/" + childName + objToParams(params, "?");
+								return $.get(getEndpoint(path));
+							}
+						};
+						iface.read = iface.get;
+						return iface;
 					}
 				};
 				iface.read = iface.get;
