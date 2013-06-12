@@ -480,21 +480,23 @@ var importio = (function($) {
 		return defaultConfiguration;
 	}
 	
+	// Returns an API endpoint
+	function getEndpoint(path) {
+		var port = currentConfiguration.port;
+		if (!currentConfiguration.port) {
+			if (currentConfiguration.https) {
+				port = 443;
+			} else {
+				port = 80;
+			}
+		}
+		
+		return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
+	}
+	
 	// API aliasing
 	function bucket(b) {
 		var bucketName = b;
-		function getEndpoint(path) {
-			var port = currentConfiguration.port;
-			if (!currentConfiguration.port) {
-				if (currentConfiguration.https) {
-					port = 443;
-				} else {
-					port = 80;
-				}
-			}
-			
-			return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
-		}
 		function objToParams(params) {
 			var p = "";
 			if (params) {
@@ -584,6 +586,18 @@ var importio = (function($) {
 		return iface;
 	}
 	
+	var auth = {
+		"currentuser": function() {
+			return $.get(getEndpoint("/auth/currentuser"));
+		},
+		"login": function(username, password) {
+			return $.post(getEndpoint("/auth/login"), { "username": username, "password": password })
+		},
+		"logout": function() {
+			return $.post(getEndpoint("/auth/logout"));
+		}
+	}
+	
 	//******************************
 	//********** Return variables **
 	//******************************
@@ -592,7 +606,8 @@ var importio = (function($) {
 		init: init,
 		query: query,
 		getDefaultConfiguration: getDefaultConfiguration,
-		bucket: bucket
+		bucket: bucket,
+		auth: auth
 	};
 	
 })(jQuery);
