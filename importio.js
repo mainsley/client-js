@@ -538,6 +538,9 @@ var importio = (function($) {
 				var path = "/store/" + bucketName + objToParams(params, "?");
 				return $.get(getEndpoint(path));
 			},
+			"get": function(params) {
+				return $.get(getEndpoint("/store/" + bucketName + objToParams(params, "?")));
+			},
 			"object": function(g) {
 				var guid = g;
 				function doAjax(method, parameters) {
