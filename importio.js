@@ -16,7 +16,7 @@ var importio = (function($) {
 	});
 	
 	// Encapsulates a query
-	var q = function($, config, query, deferred, sys_finished) {
+	var q = function($, config, query, deferred, callbacks, sys_finished) {
 
 		// Setup the ID
 		var id = ((new Date()).getTime()) + (Math.random() * 1e17);
@@ -89,7 +89,9 @@ var importio = (function($) {
 		function doStart(type, query) {
 			query.requestId = id;
 			$.cometd.publish("/service/" + type, query);
-			//deferred.sendStart();
+			if (callbacks.hasOwnProperty("start") && typeof callbacks.start == "function") {
+				callbacks.start();
+			}
 			timer = setTimeout(function() {
 				if (!finished) {
 					done();
@@ -148,7 +150,9 @@ var importio = (function($) {
 				finished = true;
 			}
 			
-			//deferred.sendMessage(message);
+			if (callbacks.hasOwnProperty("message") && typeof callbacks.message == "function") {
+				callbacks.message(message);
+			}
 			
 			if (finished) {
 				done();
@@ -181,7 +185,10 @@ var importio = (function($) {
 				};
 			}
 			results = results.concat(res);
-			//deferred.sendData(res);
+
+			if (callbacks.hasOwnProperty("data") && typeof callbacks.data == "function") {
+				callbacks.data(res);
+			}
 		}
 		
 		// Handles done events
@@ -469,7 +476,7 @@ var importio = (function($) {
 		deferred = augmentDeferred(deferred, callbacks);
 		// Make the CBs go into the promise
 		checkInit(function() {
-			var qobj = new q($, currentConfiguration, query, deferred, function(id) {
+			var qobj = new q($, currentConfiguration, query, deferred, callbacks, function(id) {
 				delete queries[id];
 			});
 			queries[qobj.getId()] = qobj;
