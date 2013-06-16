@@ -523,7 +523,9 @@ var importio = (function($) {
 						}
 					}
 				}
-				p += (existPrefix ? existPrefix : "") + append.join("&");
+				if (append.length) {
+					p += (existPrefix ? existPrefix : "") + append.join("&");
+				}
 			}
 			return p;
 		}
@@ -574,7 +576,12 @@ var importio = (function($) {
 						return doAjax("DELETE");
 					},
 					"plugin": function(plugin, method, params) {
-						var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/_" + plugin;
+						var obj;
+						if (params.hasOwnProperty("object") && params.object) {
+							obj = params.object;
+							delete params.object;
+						}
+						var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/_" + plugin + (obj ? "/" + obj : "");
 						var data;
 						if (method.toLowerCase() == "get") {
 							path += objToParams(params, "?");
