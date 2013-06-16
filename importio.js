@@ -555,7 +555,7 @@ var importio = (function($) {
 				function doAjax(method, parameters) {
 					return $.ajax(getEndpoint("/store/" + bucketName + (guid ? "/" + guid : "")), {
 						"type": method,
-						"contentType": parameters ? "json" : undefined,
+						"contentType": parameters ? "application/json" : undefined,
 						"data": parameters ? JSON.stringify(parameters) : undefined
 					});
 				}
@@ -590,6 +590,7 @@ var importio = (function($) {
 						}
 						return $.ajax(getEndpoint(path), {
 							"type": method,
+							"contentType": params ? "application/json" : undefined,
 							"data": data
 						});
 					},
