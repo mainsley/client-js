@@ -576,6 +576,7 @@ var importio = (function($) {
 						return doAjax("DELETE");
 					},
 					"plugin": function(plugin, method, params) {
+						if (!params) { params = {}; }
 						var obj;
 						if (params.hasOwnProperty("object") && params.object) {
 							obj = params.object;
