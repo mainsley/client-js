@@ -94,7 +94,13 @@ var importio = (function($) {
 			}
 			timer = setTimeout(function() {
 				if (!finished) {
-					done();
+					// Has timed out, so want to fail
+					error({
+						"data": {
+							"errorType": "TIMEOUT",
+							"data": "Timed out."
+						}
+					});
 				}
 			}, config.timeout * 1000);
 		}
@@ -225,17 +231,17 @@ var importio = (function($) {
 		"disconnecting": false,
 		"callbacks": {
 			"established": function() {
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTION_ESTABLISHED" } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTION_ESTABLISHED" } });
 			},
 			"broken": function() {
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTION_BROKEN" } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTION_BROKEN" } });
 			},
 			"closed": function(multipleClients) {
 				var reason = multipleClients ? "MULTIPLE_CLIENTS" : "UNKNOWN";
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTION_CLOSED", "reason": reason } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTION_CLOSED", "reason": reason } });
 			},
 			"connected": function() {
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTED" } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTED" } });
 			},
 			"connect": cometConnectFunction,
 			"handshake": function(message) {
@@ -243,12 +249,12 @@ var importio = (function($) {
 					$.cometd.subscribe('/messaging', function receive(message) {
 							var query = queries[message.data.requestId];
 							if (!query) {
-								currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "NO_QUERY", "id": message.data.requestId } });
+								doConnectionCallbacks({"channel": "/meta", "data": { "type": "NO_QUERY", "id": message.data.requestId } });
 								return;
 							}
 							query.receive(message);
 					});
-					currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "SUBSCRIBED" } });
+					doConnectionCallbacks({"channel": "/meta", "data": { "type": "SUBSCRIBED" } });
 				}
 			}
 		}
@@ -265,7 +271,7 @@ var importio = (function($) {
 		"port": false,
 		"logging": false,
 		"https": true,
-		"connectionCallback": log,
+		"connectionCallbacks": [log],
 		"timeout": 60
 	};
 	
@@ -275,6 +281,17 @@ var importio = (function($) {
 		currentConfiguration[k] = defaultConfiguration[k];
 	}
 	
+	// Helper to callback the connection callbacks
+	var doConnectionCallbacks = function(obj) {
+		for (var i = 0; i < currentConfiguration.connectionCallbacks.length; i++) {
+			try {
+				currentConfiguration.connectionCallbacks[i](obj);
+			} catch (e) {
+				log("Error calling callback " + e);
+			}
+		}
+	}
+
 	// Queue of functions to be called after initialisation
 	var initialisationQueue = [];
 	
@@ -460,6 +477,11 @@ var importio = (function($) {
 				}
 			}
 		}
+
+		// Special case for the connectionCallbacks
+		if (Object.prototype.toString.call(c.connectionCallbacks) !== '[object Array]') {
+			c[connectionCallbacks] = [c.connectionCallbacks];
+		}
 		
 		// Save configuration
 		currentConfiguration = c;		
@@ -468,6 +490,14 @@ var importio = (function($) {
 		startComet();
 		
 		return log(currentConfiguration);
+	}
+
+	// Adds a connection callback to the list
+	function addConnectionCallback(fn) {
+		if (fn && typeof fn == "function") {
+			currentConfiguration.connectionCallbacks.push(fn);
+		}
+		console.log(currentConfiguration.connectionCallbacks);
 	}
 	
 	// Allows a user to start off a query
@@ -649,7 +679,8 @@ var importio = (function($) {
 			return ret;
 		},
 		bucket: bucket,
-		auth: auth
+		auth: auth,
+		addConnectionCallback: addConnectionCallback
 	};
 	
 })(jQuery);
