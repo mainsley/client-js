@@ -497,7 +497,6 @@ var importio = (function($) {
 		if (fn && typeof fn == "function") {
 			currentConfiguration.connectionCallbacks.push(fn);
 		}
-		console.log(currentConfiguration.connectionCallbacks);
 	}
 	
 	// Allows a user to start off a query
