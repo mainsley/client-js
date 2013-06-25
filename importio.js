@@ -280,17 +280,6 @@ var importio = (function($) {
 	for (var k in defaultConfiguration) {
 		currentConfiguration[k] = defaultConfiguration[k];
 	}
-	
-	// Helper to callback the connection callbacks
-	var doConnectionCallbacks = function(obj) {
-		for (var i = 0; i < currentConfiguration.connectionCallbacks.length; i++) {
-			try {
-				currentConfiguration.connectionCallbacks[i](obj);
-			} catch (e) {
-				log("Error calling callback " + e);
-			}
-		}
-	}
 
 	// Queue of functions to be called after initialisation
 	var initialisationQueue = [];
@@ -316,6 +305,17 @@ var importio = (function($) {
 			// We are already initialised, so run it
 			if (fn) {
 				fn();
+			}
+		}
+	}
+	
+	// Helper to callback the connection callbacks
+	var doConnectionCallbacks = function(obj) {
+		for (var i = 0; i < currentConfiguration.connectionCallbacks.length; i++) {
+			try {
+				currentConfiguration.connectionCallbacks[i](obj);
+			} catch (e) {
+				log("Error calling callback " + e);
 			}
 		}
 	}
@@ -379,7 +379,7 @@ var importio = (function($) {
 		}
 		return content;
 	}
-	
+
 	// Starts up CometD
 	function startComet() {
 		if (comet.started) {
@@ -408,20 +408,15 @@ var importio = (function($) {
 	
 	// Comet connect callback
 	function cometConnectFunction(message) {
-		if (comet.disconnecting) {
-			comet.connected = false;
-			comet.callbacks.closed(false);
-		} else {
-			comet.wasConnected = comet.connected;
-			comet.connected = (message.successful === true);
-			if (!comet.wasConnected && comet.connected) {
-				comet.callbacks.connected();
-				initCB();
-			} else if (comet.wasConnected && comet.connected) {
-				comet.callbacks.broken();
-			} else if (!comet.connected) {
-				comet.callbacks.closed(message.advice["multiple-clients"]);
-			}
+		comet.wasConnected = comet.connected;
+		comet.connected = (message.successful === true);
+		if (!comet.wasConnected && comet.connected) {
+			comet.callbacks.connected();
+			initCB();
+		} else if (comet.wasConnected && !comet.connected) {
+			comet.callbacks.broken();
+		} else if (!comet.connected) {
+			comet.callbacks.closed(message.advice["multiple-clients"]);
 		}
 	}
 	
