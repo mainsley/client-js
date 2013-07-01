@@ -514,6 +514,14 @@ var importio = (function($) {
 		return defaultConfiguration;
 	}
 	
+	function getConfiguration() {
+		var ret = {};
+		for (var k in currentConfiguration) {
+			ret[k] = currentConfiguration[k];
+		}
+		return ret;
+	}
+
 	// Returns an API endpoint
 	function getEndpoint(path) {
 		var port = currentConfiguration.port;
@@ -665,13 +673,7 @@ var importio = (function($) {
 		init: init,
 		query: query,
 		getDefaultConfiguration: getDefaultConfiguration,
-		getConfiguration: function() {
-			var ret = {};
-			for (var k in currentConfiguration) {
-				ret[k] = currentConfiguration[k];
-			}
-			return ret;
-		},
+		getConfiguration: getConfiguration,
 		bucket: bucket,
 		auth: auth,
 		addConnectionCallback: addConnectionCallback
