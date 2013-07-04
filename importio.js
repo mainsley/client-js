@@ -623,11 +623,7 @@ var importio = (function($) {
 						} else {
 							data = JSON.stringify(params);
 						}
-						return doAjax("GET", path, {
-							"type": method,
-							"contentType": params ? "application/json" : undefined,
-							"data": data
-						});
+						return doAjax(method, path, params);
 					},
 					"children": function(name) {
 						var childName = name;
