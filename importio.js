@@ -531,6 +531,15 @@ var importio = (function($) {
 		return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
 	}
 	
+	function doAjax(method, path, parameters) {
+		return $.ajax(getEndpoint(path), {
+			"type": method,
+			"contentType": parameters ? "application/json" : undefined,
+			"data": parameters ? JSON.stringify(parameters) : undefined,
+			"dataType": "json"
+		});
+	}
+
 	// API aliasing
 	function bucket(b) {
 		var bucketName = b;
@@ -555,14 +564,6 @@ var importio = (function($) {
 				}
 			}
 			return p;
-		}
-		function doAjax(method, path, parameters) {
-			return $.ajax(getEndpoint(path), {
-				"type": method,
-				"contentType": parameters ? "application/json" : undefined,
-				"data": parameters ? JSON.stringify(parameters) : undefined,
-				"dataType": "json"
-			});
 		}
 		var iface = {
 			"search": function(term, params) {
@@ -653,13 +654,17 @@ var importio = (function($) {
 	
 	var auth = {
 		"currentuser": function() {
-			return $.get(getEndpoint("/auth/currentuser"));
+			return doAjax("GET", "/auth/currentuser");
 		},
 		"login": function(username, password) {
-			return $.post(getEndpoint("/auth/login"), { "username": username, "password": password })
+			return $.ajax(getEndpoint("/auth/login"), {
+				"type": "POST",
+				"data": { "username": username, "password": password },
+				"dataType": "json"
+			});
 		},
 		"logout": function() {
-			return $.post(getEndpoint("/auth/logout"));
+			return doAjax("POST", "/auth/logout");
 		}
 	}
 	
