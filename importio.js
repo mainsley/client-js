@@ -398,11 +398,6 @@ var importio = (function($) {
 		$.cometd.addListener('/meta/handshake', comet.callbacks.handshake);
 		$.cometd.addListener('/meta/connect', comet.callbacks.connect);
 		
-		// Add unload handler
-		$(window).bind('beforeunload', function() {
-			$.cometd.disconnect();
-		}); 
-		
 		comet.started = true;
 	}
 	
