@@ -5,14 +5,24 @@ if (ioAngularAvailable) {
 		// Whether or not connected to the server
 		var connected = true;
 
+		// If we are unloading the page
+		var unloading = false;
+
+		window.addEventListener("beforeunload", function() {
+			unloading = true;
+		});
+
 		// Notify of a change in the state
 		var notify = function() {
 			$scope.$broadcast("ioconnectionchange", connected);
 			if (connected) {
 				$scope.$broadcast("ioconnected");
-			} else {
+			} else if (!unloading) {
+				// Only dispatch disconnect if we're not unloading the page
 				$scope.$broadcast("iodisconnected");
 			}
+			// We need somewhere to reset the unloading, in case user cancels
+			unloading = false;
 		}
 
 		// Handle the state of the connection
