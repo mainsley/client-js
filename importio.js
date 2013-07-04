@@ -556,12 +556,23 @@ var importio = (function($) {
 			}
 			return p;
 		}
+		function doAjax(method, path, parameters) {
+			return $.ajax(getEndpoint(path), {
+				"type": method,
+				"contentType": parameters ? "application/json" : undefined,
+				"data": parameters ? JSON.stringify(parameters) : undefined,
+				"dataType": "json"
+			});
+		}
 		var iface = {
 			"search": function(term, params) {
 				var path = "/store/" + bucketName + "/_search?";
+				if (!params) {
+					params = {};
+				}
 				params.q = term;
 				path += objToParams(params);
-				return $.get(getEndpoint(path));
+				return doAjax("GET", path);
 			},
 			"list": function(key, val, offset) {
 				var params = {
@@ -572,35 +583,31 @@ var importio = (function($) {
 					params["index_offset"] = [val, offset];
 				}
 				var path = "/store/" + bucketName + objToParams(params, "?");
-				return $.get(getEndpoint(path));
+				return doAjax("GET", path);
 			},
 			"get": function(params) {
-				return $.get(getEndpoint("/store/" + bucketName + objToParams(params, "?")));
+				return doAjax("GET", "/store/" + bucketName + objToParams(params, "?"));
 			},
 			"object": function(g) {
 				var guid = g;
-				function doAjax(method, parameters) {
-					return $.ajax(getEndpoint("/store/" + bucketName + (guid ? "/" + guid : "")), {
-						"type": method,
-						"contentType": parameters ? "application/json" : undefined,
-						"data": parameters ? JSON.stringify(parameters) : undefined
-					});
+				function doObjectAjax(method, parameters) {
+					return doAjax(method, "/store/" + bucketName + (guid ? "/" + guid : ""), parameters);
 				}
 				var iface = {
 					"get": function() {
-						return doAjax("GET");
+						return doObjectAjax("GET");
 					},
 					"post": function(params) {
-						return doAjax("POST", params);
+						return doObjectAjax("POST", params);
 					},
 					"put": function(params) {
-						return doAjax("PUT", params);
+						return doObjectAjax("PUT", params);
 					},
 					"patch": function(params) {
-						return doAjax("PATCH", params)
+						return doObjectAjax("PATCH", params)
 					},
 					"del": function() {
-						return doAjax("DELETE");
+						return doObjectAjax("DELETE");
 					},
 					"plugin": function(plugin, method, params) {
 						if (!params) { params = {}; }
@@ -616,7 +623,7 @@ var importio = (function($) {
 						} else {
 							data = JSON.stringify(params);
 						}
-						return $.ajax(getEndpoint(path), {
+						return doAjax("GET", path, {
 							"type": method,
 							"contentType": params ? "application/json" : undefined,
 							"data": data
@@ -627,7 +634,7 @@ var importio = (function($) {
 						var iface = {
 							"get": function(params) {
 								var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/" + childName + objToParams(params, "?");
-								return $.get(getEndpoint(path));
+								return doAjax("GET", path);
 							}
 						};
 						iface.read = iface.get;
