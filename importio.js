@@ -540,31 +540,32 @@ var importio = (function($) {
 		});
 	}
 
+	function objToParams(params, existPrefix) {
+		var p = "";
+		if (params) {
+			var append = [];
+			for (var k in params) {
+				if (params.hasOwnProperty(k)) { // Check param is valid
+					if (params[k]) { // Skip if its undefined or falsey
+						if (!(params[k] instanceof Array)) { // Convert to array in case there is only one
+							params[k] = [params[k]]
+						}
+						params[k].map(function(p) {
+							append.push(k + "=" + p); // Push each one on to the list
+						})
+					}
+				}
+			}
+			if (append.length) {
+				p += (existPrefix ? existPrefix : "") + append.join("&");
+			}
+		}
+		return p;
+	}
+
 	// API aliasing
 	function bucket(b) {
 		var bucketName = b;
-		function objToParams(params, existPrefix) {
-			var p = "";
-			if (params) {
-				var append = [];
-				for (var k in params) {
-					if (params.hasOwnProperty(k)) { // Check param is valid
-						if (params[k]) { // Skip if its undefined or falsey
-							if (!(params[k] instanceof Array)) { // Convert to array in case there is only one
-								params[k] = [params[k]]
-							}
-							params[k].map(function(p) {
-								append.push(k + "=" + p); // Push each one on to the list
-							})
-						}
-					}
-				}
-				if (append.length) {
-					p += (existPrefix ? existPrefix : "") + append.join("&");
-				}
-			}
-			return p;
-		}
 		var iface = {
 			"search": function(term, params) {
 				var path = "/store/" + bucketName + "/_search?";
@@ -665,6 +666,10 @@ var importio = (function($) {
 		},
 		"logout": function() {
 			return doAjax("POST", "/auth/logout");
+		},
+		"apikey": function(password) {
+			var path = "/auth/apikeyadmin?" + objToParams({ "password": password });
+			return doAjax("GET", path);
 		}
 	}
 	
