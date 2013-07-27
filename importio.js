@@ -592,7 +592,7 @@ var importio = (function($) {
 			},
 			"object": function(g) {
 				var guid = g;
-				function doObjectAjax(method, parameters) {
+				function doObjectAjax(method, params) {
 					var path = "/store/" + bucketName + (guid ? "/" + guid : "");
 					var data;
 					if (method.toLowerCase() == "get") {
