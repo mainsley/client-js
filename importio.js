@@ -593,7 +593,14 @@ var importio = (function($) {
 			"object": function(g) {
 				var guid = g;
 				function doObjectAjax(method, parameters) {
-					return doAjax(method, "/store/" + bucketName + (guid ? "/" + guid : ""), parameters);
+					var path = "/store/" + bucketName + (guid ? "/" + guid : "");
+					var data;
+					if (method.toLowerCase() == "get") {
+						path += objToParams(params, "?");
+					} else {
+						data = JSON.stringify(params);
+					}
+					return doAjax(method, path, data);
 				}
 				var iface = {
 					"get": function() {
@@ -625,7 +632,7 @@ var importio = (function($) {
 						} else {
 							data = JSON.stringify(params);
 						}
-						return doAjax(method, path, params);
+						return doAjax(method, path, data);
 					},
 					"children": function(name) {
 						var childName = name;
