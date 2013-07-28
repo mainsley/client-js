@@ -532,12 +532,17 @@ var importio = (function($) {
 	}
 	
 	function doAjax(method, path, parameters) {
-		return $.ajax(getEndpoint(path), {
+		var config = {
 			"type": method,
-			"contentType": parameters ? "application/json" : undefined,
-			"data": parameters ? JSON.stringify(parameters) : undefined,
 			"dataType": "json"
-		});
+		}
+		if (method == "GET") {
+			path += objToParams(parameters, "?");
+		} else {
+			config.contentType = parameters ? "application/json" : undefined;
+			config.data = parameters ? JSON.stringify(parameters) : undefined;
+		}
+		return $.ajax(getEndpoint(path), config);
 	}
 
 	function objToParams(params, existPrefix) {
@@ -573,8 +578,7 @@ var importio = (function($) {
 					params = {};
 				}
 				params.q = term;
-				path += objToParams(params);
-				return doAjax("GET", path);
+				return doAjax("GET", path, params);
 			},
 			"list": function(key, val, offset) {
 				var params = {
@@ -584,23 +588,17 @@ var importio = (function($) {
 				if (offset) {
 					params["index_offset"] = [val, offset];
 				}
-				var path = "/store/" + bucketName + objToParams(params, "?");
-				return doAjax("GET", path);
+				var path = "/store/" + bucketName;
+				return doAjax("GET", path, params);
 			},
 			"get": function(params) {
-				return doAjax("GET", "/store/" + bucketName + objToParams(params, "?"));
+				return doAjax("GET", "/store/" + bucketName, params);
 			},
 			"object": function(g) {
 				var guid = g;
 				function doObjectAjax(method, params) {
 					var path = "/store/" + bucketName + (guid ? "/" + guid : "");
-					var data;
-					if (method.toLowerCase() == "get") {
-						path += objToParams(params, "?");
-					} else {
-						data = JSON.stringify(params);
-					}
-					return doAjax(method, path, data);
+					return doAjax(method, path, params);
 				}
 				var iface = {
 					"get": function() {
@@ -626,20 +624,14 @@ var importio = (function($) {
 							delete params.object;
 						}
 						var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/_" + plugin + (obj ? "/" + obj : "");
-						var data;
-						if (method.toLowerCase() == "get") {
-							path += objToParams(params, "?");
-						} else {
-							data = JSON.stringify(params);
-						}
-						return doAjax(method, path, data);
+						return doAjax(method, path, params);
 					},
 					"children": function(name) {
 						var childName = name;
 						var iface = {
 							"get": function(params) {
-								var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/" + childName + objToParams(params, "?");
-								return doAjax("GET", path);
+								var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/" + childName;
+								return doAjax("GET", path, params);
 							}
 						};
 						iface.read = iface.get;
@@ -675,8 +667,8 @@ var importio = (function($) {
 			return doAjax("POST", "/auth/logout");
 		},
 		"apikey": function(password) {
-			var path = "/auth/apikeyadmin?" + objToParams({ "password": password });
-			return doAjax("GET", path);
+			var path = "/auth/apikeyadmin";
+			return doAjax("GET", path, { "password": password });
 		}
 	}
 	
