@@ -573,7 +573,7 @@ var importio = (function($) {
 		var bucketName = b;
 		var iface = {
 			"search": function(term, params) {
-				var path = "/store/" + bucketName + "/_search?";
+				var path = "/store/" + bucketName + "/_search";
 				if (!params) {
 					params = {};
 				}
