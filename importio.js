@@ -657,6 +657,7 @@ var importio = (function($) {
 			return doAjax("GET", "/auth/currentuser");
 		},
 		"login": function(username, password) {
+			// This is a special case because it uses form format rather than JSON
 			return $.ajax(getEndpoint("/auth/login"), {
 				"type": "POST",
 				"data": { "username": username, "password": password },
@@ -667,8 +668,7 @@ var importio = (function($) {
 			return doAjax("POST", "/auth/logout");
 		},
 		"apikey": function(password) {
-			var path = "/auth/apikeyadmin";
-			return doAjax("GET", path, { "password": password });
+			return doAjax("GET", "/auth/apikeyadmin", { "password": password });
 		}
 	}
 	
