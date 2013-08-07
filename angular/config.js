@@ -1,5 +1,5 @@
 // Detect whether we have angular installed
-var ioAngularAvailable = window.hasOwnProperty("angular");
+var ioAngularAvailable = ({}).hasOwnProperty.call(window,"angular");
 
 if (ioAngularAvailable) {
 	// The angular module
