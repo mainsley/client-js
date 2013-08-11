@@ -187,7 +187,10 @@ var importio = (function($) {
 				res[i] = {
 					"data" : res[i],
 					"connectorGuid": message.connectorGuid,
-					"connectorVersionGuid": message.connectorVersionGuid
+					"connectorVersionGuid": message.connectorVersionGuid,
+					"pageUrl": message.data.pageUrl,
+					"cookies": message.data.cookies,
+					"offset": message.data.offset
 				};
 			}
 			results = results.concat(res);
