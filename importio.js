@@ -89,7 +89,7 @@ var importio = (function($) {
 		function doStart(type, query) {
 			query.requestId = id;
 			$.cometd.publish("/service/" + type, query);
-			if (callbacks.hasOwnProperty("start") && typeof callbacks.start == "function") {
+			if (callbacks && callbacks.hasOwnProperty("start") && typeof callbacks.start == "function") {
 				callbacks.start();
 			}
 			timer = setTimeout(function() {
@@ -147,7 +147,11 @@ var importio = (function($) {
 				finished = (pages.queued == pages.completed);
 			} else if (message.type == "MESSAGE") {
 				messages++;
-				data(message);
+				if (message.data.hasOwnProperty("errorType")) {
+					warning(message);
+				} else {
+					data(message);
+				}
 			} else if (message.type == "UNAUTH") {
 				error(message);
 				finished = true;
@@ -156,7 +160,7 @@ var importio = (function($) {
 				finished = true;
 			}
 			
-			if (callbacks.hasOwnProperty("message") && typeof callbacks.message == "function") {
+			if (callbacks && callbacks.hasOwnProperty("message") && typeof callbacks.message == "function") {
 				callbacks.message(message);
 			}
 			
@@ -164,6 +168,13 @@ var importio = (function($) {
 				done();
 			}
 			
+		}
+
+		// Handles a warning from the server
+		function warning(message) {
+			if (callbacks && callbacks.hasOwnProperty("warning") && typeof callbacks.warning == "function") {
+				callbacks.warning(message.data.errorType, message.data.error);
+			}
 		}
 		
 		// Handles an error condition
@@ -195,7 +206,7 @@ var importio = (function($) {
 			}
 			results = results.concat(res);
 
-			if (callbacks.hasOwnProperty("data") && typeof callbacks.data == "function") {
+			if (callbacks && callbacks.hasOwnProperty("data") && typeof callbacks.data == "function") {
 				callbacks.data(res);
 			}
 		}
