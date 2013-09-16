@@ -667,6 +667,14 @@ var importio = (function($) {
 	}
 	
 	var auth = {
+		"changepassword": function(oldpassword, newpassword) {
+			// This is a special case because it uses form format rather than JSON
+			return $.ajax(getEndpoint("/auth/change-password"), {
+				"type": "POST",
+				"data": { "oldpassword": oldpassword, "newpassword": newpassword },
+				"dataType": "json"
+			});
+		},
 		"currentuser": function() {
 			return doAjax("GET", "/auth/currentuser");
 		},
