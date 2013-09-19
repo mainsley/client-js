@@ -3,18 +3,6 @@ Import.io JavaScript Client Library
 
 Use this client library to access [import.io](http://import.io) from client browsers.
 
-# Examples
-
-Check out the examples directory - there are plenty of things you can do, and some nice demos of integration!
-
-You can run the demos from your own machine - we recommend you run all demos from a browser through some kind of server.
-
-This can be as simple as starting up a local webserver in the examples directory, e.g.:
-
-    php -S 0.0.0.0:8000
-
-For the server signing example, we included a handy PHP script to show you how to get started with it.
-
 # Dependencies
 
 All of our dependencies are self-contained with the exception of jQuery.
