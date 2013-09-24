@@ -9,8 +9,14 @@ var importio = (function($) {
 	//********** Private classes ***
 	//******************************
 	
+	$(document).ajaxSend(function (event, xhr, settings) {
+		settings.xhrFields = {
+			withCredentials: true
+		};
+	});
+	
 	// Encapsulates a query
-	var q = function($, config, query, deferred, sys_finished) {
+	var q = function($, config, query, deferred, callbacks, sys_finished) {
 
 		// Setup the ID
 		var id = ((new Date()).getTime()) + (Math.random() * 1e17);
@@ -83,10 +89,18 @@ var importio = (function($) {
 		function doStart(type, query) {
 			query.requestId = id;
 			$.cometd.publish("/service/" + type, query);
-			deferred.sendStart();
+			if (callbacks && callbacks.hasOwnProperty("start") && typeof callbacks.start == "function") {
+				callbacks.start();
+			}
 			timer = setTimeout(function() {
 				if (!finished) {
-					done();
+					// Has timed out, so want to fail
+					error({
+						"data": {
+							"errorType": "TIMEOUT",
+							"data": "Timed out."
+						}
+					});
 				}
 			}, config.timeout * 1000);
 		}
@@ -133,7 +147,11 @@ var importio = (function($) {
 				finished = (pages.queued == pages.completed);
 			} else if (message.type == "MESSAGE") {
 				messages++;
-				data(message);
+				if (message.data.hasOwnProperty("errorType")) {
+					warning(message);
+				} else {
+					data(message);
+				}
 			} else if (message.type == "UNAUTH") {
 				error(message);
 				finished = true;
@@ -142,12 +160,21 @@ var importio = (function($) {
 				finished = true;
 			}
 			
-			deferred.sendMessage(message);
+			if (callbacks && callbacks.hasOwnProperty("message") && typeof callbacks.message == "function") {
+				callbacks.message(message);
+			}
 			
 			if (finished) {
 				done();
 			}
 			
+		}
+
+		// Handles a warning from the server
+		function warning(message) {
+			if (callbacks && callbacks.hasOwnProperty("warning") && typeof callbacks.warning == "function") {
+				callbacks.warning(message.data.errorType, message.data.error);
+			}
 		}
 		
 		// Handles an error condition
@@ -171,11 +198,17 @@ var importio = (function($) {
 				res[i] = {
 					"data" : res[i],
 					"connectorGuid": message.connectorGuid,
-					"connectorVersionGuid": message.connectorVersionGuid
+					"connectorVersionGuid": message.connectorVersionGuid,
+					"pageUrl": message.data.pageUrl,
+					"cookies": message.data.cookies,
+					"offset": message.data.offset
 				};
 			}
 			results = results.concat(res);
-			deferred.sendData(res);
+
+			if (callbacks && callbacks.hasOwnProperty("data") && typeof callbacks.data == "function") {
+				callbacks.data(res);
+			}
 		}
 		
 		// Handles done events
@@ -212,17 +245,17 @@ var importio = (function($) {
 		"disconnecting": false,
 		"callbacks": {
 			"established": function() {
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTION_ESTABLISHED" } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTION_ESTABLISHED" } });
 			},
 			"broken": function() {
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTION_BROKEN" } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTION_BROKEN" } });
 			},
 			"closed": function(multipleClients) {
 				var reason = multipleClients ? "MULTIPLE_CLIENTS" : "UNKNOWN";
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTION_CLOSED", "reason": reason } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTION_CLOSED", "reason": reason } });
 			},
 			"connected": function() {
-				currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "CONNECTED" } });
+				doConnectionCallbacks({"channel": "/meta", "data": { "type": "CONNECTED" } });
 			},
 			"connect": cometConnectFunction,
 			"handshake": function(message) {
@@ -230,12 +263,12 @@ var importio = (function($) {
 					$.cometd.subscribe('/messaging', function receive(message) {
 							var query = queries[message.data.requestId];
 							if (!query) {
-								currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "NO_QUERY", "id": message.data.requestId } });
+								doConnectionCallbacks({"channel": "/meta", "data": { "type": "NO_QUERY", "id": message.data.requestId } });
 								return;
 							}
 							query.receive(message);
 					});
-					currentConfiguration.connectionCallback({"channel": "/meta", "data": { "type": "SUBSCRIBED" } });
+					doConnectionCallbacks({"channel": "/meta", "data": { "type": "SUBSCRIBED" } });
 				}
 			}
 		}
@@ -246,18 +279,22 @@ var importio = (function($) {
 	
 	// Default configuration
 	var defaultConfiguration = {
-		"host": "query.import.io",
+		"host": "import.io",
 		"hostPrefix": "",
-		"port": 80,
+		"randomHost": true,
+		"port": false,
 		"logging": false,
-		"https": false,
-		"connectionCallback": log,
+		"https": true,
+		"connectionCallbacks": [log],
 		"timeout": 60
 	};
 	
 	// Store the current configuration
 	var currentConfiguration = {};
-	
+	for (var k in defaultConfiguration) {
+		currentConfiguration[k] = defaultConfiguration[k];
+	}
+
 	// Queue of functions to be called after initialisation
 	var initialisationQueue = [];
 	
@@ -286,6 +323,17 @@ var importio = (function($) {
 		}
 	}
 	
+	// Helper to callback the connection callbacks
+	var doConnectionCallbacks = function(obj) {
+		for (var i = 0; i < currentConfiguration.connectionCallbacks.length; i++) {
+			try {
+				currentConfiguration.connectionCallbacks[i](obj);
+			} catch (e) {
+				log("Error calling callback " + e);
+			}
+		}
+	}
+	
 	// Generates a random domain endpoint
 	function randomDomain() {
 	    var domain = "";
@@ -304,31 +352,48 @@ var importio = (function($) {
 			return endpoint;
 		}
 		checkInit();
-		// Max length out the prefix the user specifies = 20 + 1 characters
+		
+		// Max length of the prefix the user specifies = 20 (+1) characters
 		var prefix = currentConfiguration.hostPrefix;
 		prefix = prefix.length > 20 ? prefix.substring(0, 20) : prefix;
 		prefix = prefix.length > 0 ? prefix + "-" : "";
-		// Get the domain of the page, but only if it exists = 20 + 1 characters
+		
+		// Get the domain of the page, but only if it exists = 20 (+1) characters
 		var domain = (window.location.hostname ? window.location.hostname.replace(/\./g, "") : "");
 		domain = domain.length > 20 ? domain.substring(0, 20) : domain;
 		domain = domain.length > 0 ? domain + "-" : "";
+		
 		// Generate the special subdomain, from the user's prefix + the domain + the random string = 21 + 21 + 20 = 62
 		var specialHost = prefix + domain + randomDomain();
+		
 		// Generate the entire host, the special subdomain + the configured query server
-		var host = specialHost + "." + currentConfiguration.host;
-		endpoint = "http" + (currentConfiguration.https ? "s" : "") + "://" + host + ":" + currentConfiguration.port + "/query/comet";
+		var host = currentConfiguration.randomHost ? specialHost + ".query." + currentConfiguration.host : "query." + currentConfiguration.host;
+		
+		var port = currentConfiguration.port;
+		if (!currentConfiguration.port) {
+			if (currentConfiguration.https) {
+				port = 443;
+			} else {
+				port = 80;
+			}
+		}
+		
+		var protocol = "http" + (currentConfiguration.https ? "s": "");
+		
+		endpoint = protocol + "://" + host + ":" + port + "/query/comet";
+		
 		return log(endpoint);
 	}
 	
 	// Log some output, if allowed; returns content irrespective of logging
-	function log(content, e, x, t, r, a, s) {
+	function log(content) {
 		checkInit();
 		if (currentConfiguration.logging && window.console && console.log) {
 			console.log(content);
 		}
 		return content;
 	}
-	
+
 	// Starts up CometD
 	function startComet() {
 		if (comet.started) {
@@ -347,30 +412,20 @@ var importio = (function($) {
 		$.cometd.addListener('/meta/handshake', comet.callbacks.handshake);
 		$.cometd.addListener('/meta/connect', comet.callbacks.connect);
 		
-		// Add unload handler
-		$(window).bind('beforeunload', function() {
-			$.cometd.disconnect();
-		}); 
-		
 		comet.started = true;
 	}
 	
 	// Comet connect callback
 	function cometConnectFunction(message) {
-		if (comet.disconnecting) {
-			comet.connected = false;
-			comet.callbacks.closed(false);
-		} else {
-			comet.wasConnected = comet.connected;
-			comet.connected = (message.successful === true);
-			if (!comet.wasConnected && comet.connected) {
-				comet.callbacks.connected();
-				initCB();
-			} else if (comet.wasConnected && comet.connected) {
-				comet.callbacks.broken();
-			} else if (!comet.connected) {
-				comet.callbacks.closed(message.advice["multiple-clients"]);
-			}
+		comet.wasConnected = comet.connected;
+		comet.connected = (message.successful === true);
+		if (!comet.wasConnected && comet.connected) {
+			comet.callbacks.connected();
+			initCB();
+		} else if (comet.wasConnected && !comet.connected) {
+			comet.callbacks.broken();
+		} else if (!comet.connected) {
+			comet.callbacks.closed(message.advice["multiple-clients"]);
 		}
 	}
 	
@@ -426,6 +481,11 @@ var importio = (function($) {
 				}
 			}
 		}
+
+		// Special case for the connectionCallbacks
+		if (Object.prototype.toString.call(c.connectionCallbacks) !== '[object Array]') {
+			c[connectionCallbacks] = [c.connectionCallbacks];
+		}
 		
 		// Save configuration
 		currentConfiguration = c;		
@@ -435,14 +495,21 @@ var importio = (function($) {
 		
 		return log(currentConfiguration);
 	}
+
+	// Adds a connection callback to the list
+	function addConnectionCallback(fn) {
+		if (fn && typeof fn == "function") {
+			currentConfiguration.connectionCallbacks.push(fn);
+		}
+	}
 	
 	// Allows a user to start off a query
 	function query(query, callbacks) {
-		var deferred = $.Deferred(false, [["sendMessage", "message"], ["sendStart", "start"], ["sendData", "data"]]);
+		var deferred = $.Deferred(false);
 		deferred = augmentDeferred(deferred, callbacks);
 		// Make the CBs go into the promise
 		checkInit(function() {
-			var qobj = new q($, currentConfiguration, query, deferred, function(id) {
+			var qobj = new q($, currentConfiguration, query, deferred, callbacks, function(id) {
 				delete queries[id];
 			});
 			queries[qobj.getId()] = qobj;
@@ -456,9 +523,184 @@ var importio = (function($) {
 		return defaultConfiguration;
 	}
 	
-	// Allow users to get our jQuery object if they want it
-	function jQuery() {
-		return $;
+	function getConfiguration() {
+		var ret = {};
+		for (var k in currentConfiguration) {
+			ret[k] = currentConfiguration[k];
+		}
+		return ret;
+	}
+
+	// Returns an API endpoint
+	function getEndpoint(path) {
+		var port = currentConfiguration.port;
+		if (!currentConfiguration.port) {
+			if (currentConfiguration.https) {
+				port = 443;
+			} else {
+				port = 80;
+			}
+		}
+		
+		return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
+	}
+	
+	function doAjax(method, path, parameters) {
+		var config = {
+			"type": method,
+			"dataType": "json"
+		}
+		if (method == "GET") {
+			path += objToParams(parameters, "?");
+		} else {
+			config.contentType = parameters ? "application/json" : undefined;
+			config.data = parameters ? JSON.stringify(parameters) : undefined;
+		}
+		return $.ajax(getEndpoint(path), config);
+	}
+
+	function objToParams(params, existPrefix) {
+		var p = "";
+		if (params) {
+			var append = [];
+			for (var k in params) {
+				if (params.hasOwnProperty(k)) { // Check param is valid
+					if (params[k]) { // Skip if its undefined or falsey
+						if (!(params[k] instanceof Array)) { // Convert to array in case there is only one
+							params[k] = [params[k]]
+						}
+						params[k].map(function(p) {
+							append.push(k + "=" + p); // Push each one on to the list
+						})
+					}
+				}
+			}
+			if (append.length) {
+				p += (existPrefix ? existPrefix : "") + append.join("&");
+			}
+		}
+		return p;
+	}
+
+	// API aliasing
+	function bucket(b) {
+		var bucketName = b;
+		var iface = {
+			"search": function(term, params) {
+				var path = "/store/" + bucketName + "/_search";
+				if (!params) {
+					params = {};
+				}
+				params.q = term;
+				return doAjax("GET", path, params);
+			},
+			"list": function(key, val, offset) {
+				var params = {
+					"index": key,
+					"index_value": val
+				}
+				if (offset) {
+					params["index_offset"] = [val, offset];
+				}
+				var path = "/store/" + bucketName;
+				return doAjax("GET", path, params);
+			},
+			"get": function(params) {
+				return doAjax("GET", "/store/" + bucketName, params);
+			},
+			"object": function(g) {
+				var guid = g;
+				function doObjectAjax(method, params) {
+					var path = "/store/" + bucketName + (guid ? "/" + guid : "");
+					return doAjax(method, path, params);
+				}
+				var iface = {
+					"get": function() {
+						return doObjectAjax("GET");
+					},
+					"post": function(params) {
+						return doObjectAjax("POST", params);
+					},
+					"put": function(params) {
+						return doObjectAjax("PUT", params);
+					},
+					"patch": function(params) {
+						return doObjectAjax("PATCH", params)
+					},
+					"del": function() {
+						return doObjectAjax("DELETE");
+					},
+					"plugin": function(plugin, method, params) {
+						if (!params) { params = {}; }
+						var obj;
+						if (params.hasOwnProperty("object") && params.object) {
+							obj = params.object;
+							delete params.object;
+						}
+						var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/_" + plugin + (obj ? "/" + obj : "");
+						return doAjax(method, path, params);
+					},
+					"children": function(name) {
+						var childName = name;
+						var iface = {
+							"get": function(params) {
+								var path = "/store/" + bucketName + (guid ? "/" + guid : "") + "/" + childName;
+								return doAjax("GET", path, params);
+							}
+						};
+						iface.read = iface.get;
+						return iface;
+					}
+				};
+				iface.read = iface.get;
+				iface.create = iface.post;
+				iface.update = iface.put;
+				iface.tweak = iface.patch;
+				iface.remove = iface.del;
+				return iface;
+			}
+		}
+		iface.create = iface.object().create;
+		iface.children = iface.object().children;
+		iface.plugin = iface.object().plugin;
+		return iface;
+	}
+	
+	var auth = {
+		"changepassword": function(oldpassword, newpassword) {
+			// This is a special case because it uses form format rather than JSON
+			return $.ajax(getEndpoint("/auth/change-password"), {
+				"type": "POST",
+				"data": { "oldpassword": oldpassword, "newpassword": newpassword }
+			});
+		},
+		"currentuser": function() {
+			return doAjax("GET", "/auth/currentuser");
+		},
+		"login": function(username, password) {
+			// This is a special case because it uses form format rather than JSON
+			return $.ajax(getEndpoint("/auth/login"), {
+				"type": "POST",
+				"data": { "username": username, "password": password },
+				"dataType": "json"
+			});
+		},
+		"logout": function() {
+			return doAjax("POST", "/auth/logout");
+		},
+		"apikey": {
+			"get": function(password) {
+				return doAjax("GET", "/auth/apikeyadmin", { "password": password });
+			},
+			"create": function(password) {
+				// This is a special case because it uses form format rather than JSON
+				return $.ajax(getEndpoint("/auth/apikeyadmin"), {
+					"type": "POST",
+					"data": { "password": password },
+					"dataType": "json"
+				});
+			}
+		}
 	}
 	
 	//******************************
@@ -469,8 +711,10 @@ var importio = (function($) {
 		init: init,
 		query: query,
 		getDefaultConfiguration: getDefaultConfiguration,
-		jQuery: jQuery
+		getConfiguration: getConfiguration,
+		bucket: bucket,
+		auth: auth,
+		addConnectionCallback: addConnectionCallback
 	};
 	
-})(iojq);
-delete iojq;
+})(jQuery);
