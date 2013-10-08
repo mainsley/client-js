@@ -542,7 +542,12 @@ var importio = (function($) {
 			}
 		}
 		
-		return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
+		// Detect CORS support
+		if ("withCredentials" in new XMLHttpRequest()) {
+			return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
+		} else {
+			return "/~api" + (path ? path : "");
+		}
 	}
 	
 	function doAjax(method, path, parameters) {
