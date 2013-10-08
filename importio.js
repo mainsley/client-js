@@ -714,7 +714,8 @@ var importio = (function($) {
 		getConfiguration: getConfiguration,
 		bucket: bucket,
 		auth: auth,
-		addConnectionCallback: addConnectionCallback
+		addConnectionCallback: addConnectionCallback,
+		getEndpoint: getEndpoint
 	};
 	
 })(jQuery);
