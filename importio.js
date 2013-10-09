@@ -532,7 +532,7 @@ var importio = (function($) {
 	}
 
 	// Returns an API endpoint
-	function getEndpoint(path) {
+	function getEndpoint(path, notCrossDomain) {
 		var port = currentConfiguration.port;
 		if (!currentConfiguration.port) {
 			if (currentConfiguration.https) {
@@ -543,7 +543,7 @@ var importio = (function($) {
 		}
 		
 		// Detect CORS support
-		if ("withCredentials" in new XMLHttpRequest()) {
+		if ("withCredentials" in new XMLHttpRequest() && !notCrossDomain) {
 			return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
 		} else {
 			return "/~api" + (path ? path : "");
