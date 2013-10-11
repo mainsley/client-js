@@ -591,8 +591,8 @@ var importio = (function($) {
 	function bucket(b) {
 		var bucketName = b;
 		var iface = {
-			"search": function(term, params) {
-				var path = "/store/" + bucketName + "/_search";
+			"search": function(term, params, searchSuffix) {
+				var path = "/store/" + bucketName +  (searchSuffix || "/_search");
 				if (!params) {
 					params = {};
 				}
