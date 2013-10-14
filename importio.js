@@ -531,6 +531,10 @@ var importio = (function($) {
 		return ret;
 	}
 
+	function setConfigurationProperty(property, value) {
+		currentConfiguration[property] = value;
+	}
+
 	// Returns an API endpoint
 	function getEndpoint(path, notCrossDomain) {
 		var port = currentConfiguration.port;
@@ -720,7 +724,8 @@ var importio = (function($) {
 		bucket: bucket,
 		auth: auth,
 		addConnectionCallback: addConnectionCallback,
-		getEndpoint: getEndpoint
+		getEndpoint: getEndpoint,
+		setConfigurationProperty: setConfigurationProperty
 	};
 	
 })(jQuery);
