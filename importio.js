@@ -601,7 +601,40 @@ var importio = (function($) {
 					params = {};
 				}
 				params.q = term;
-				return doAjax("GET", path, params);
+				if (bucketName.toLowerCase() != "connector") {
+					return doAjax("GET", path, params);
+				} else {
+					var p = $.Deferred();
+
+					doAjax("GET", path, params).then(function(data) {
+						var getGuids = {};
+						data.hits.hits.map(function(entry) {
+							if (entry.fields.hasOwnProperty("parentGuid") && entry.fields.parentGuid) {
+								getGuids[entry.fields.parentGuid] = entry._id;
+							}
+						});
+						if (Object.keys(getGuids).length) {
+							iface.get({ "id": Object.keys(getGuids) }).then(function(parents) {
+								parents.map(function(parent) {
+									data.hits.hits.map(function(result) {
+										if (result.fields.hasOwnProperty("parentGuid") && result.fields.parentGuid == parent.guid) {
+											for (var k in parent) {
+												if (!result.fields.hasOwnProperty(k) && k != "guid") {
+													result.fields[k] = parent[k];
+												}
+											}
+										}
+									});
+								});
+								p.resolve(data);
+							}, p.reject);
+						} else {
+							p.resolve(data);
+						}
+					}, p.reject);
+
+					return p.promise();
+				}
 			},
 			"list": function(key, val, offset) {
 				var params = {
@@ -619,13 +652,33 @@ var importio = (function($) {
 			},
 			"object": function(g) {
 				var guid = g;
-				function doObjectAjax(method, params) {
-					var path = "/store/" + bucketName + (guid ? "/" + guid : "");
+				function doObjectAjax(method, params, overwriteGuid) {
+					var theGuid = overwriteGuid || guid;
+					var path = "/store/" + bucketName + (theGuid ? "/" + theGuid : "");
 					return doAjax(method, path, params);
 				}
 				var iface = {
 					"get": function() {
-						return doObjectAjax("GET");
+						if (bucketName.toLowerCase() != "connector") {
+							return doObjectAjax("GET");
+						} else {
+							var p = $.Deferred();
+
+							doObjectAjax("GET").then(function(data) {
+								if (data.hasOwnProperty("parentGuid") && data.parentGuid) {
+									doObjectAjax("GET", false, data.parentGuid).then(function(finalObject) {
+										for (var k in data) {
+											finalObject[k] = data[k];
+										}
+										p.resolve(finalObject);
+									}, p.reject);
+								} else {
+									p.resolve(data);
+								}
+							}, p.reject);
+
+							return p.promise();
+						}
 					},
 					"post": function(params) {
 						return doObjectAjax("POST", params);
