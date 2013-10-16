@@ -648,7 +648,40 @@ var importio = (function($) {
 				return doAjax("GET", path, params);
 			},
 			"get": function(params) {
-				return doAjax("GET", "/store/" + bucketName, params);
+				if (bucketName.toLowerCase() != "connector") {
+					return doAjax("GET", "/store/" + bucketName, params);
+				} else {
+					var p = $.Deferred();
+
+					doAjax("GET", "/store/" + bucketName, params).then(function(data) {
+						var getGuids = {};
+						data.map(function(entry) {
+							if (entry.hasOwnProperty("parentGuid") && entry.parentGuid) {
+								getGuids[entry.parentGuid] = entry._id;
+							}
+						});
+						if (Object.keys(getGuids).length) {
+							iface.get({ "id": Object.keys(getGuids) }).then(function(parents) {
+								parents.map(function(parent) {
+									data.map(function(result) {
+										if (result.hasOwnProperty("parentGuid") && result.parentGuid == parent.guid) {
+											for (var k in parent) {
+												if (!result.hasOwnProperty(k) && k != "guid") {
+													result[k] = parent[k];
+												}
+											}
+										}
+									});
+								});
+								p.resolve(data);
+							}, p.reject);
+						} else {
+							p.resolve(data);
+						}
+					}, p.reject);
+
+					return p.promise();
+				}
 			},
 			"object": function(g) {
 				var guid = g;
