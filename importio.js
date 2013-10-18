@@ -579,7 +579,7 @@ var importio = (function($) {
 							params[k] = [params[k]]
 						}
 						params[k].map(function(p) {
-							append.push(k + "=" + p); // Push each one on to the list
+							append.push(k + "=" + encodeURIComponent(p)); // Push each one on to the list
 						})
 					}
 				}
