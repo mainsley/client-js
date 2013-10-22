@@ -559,7 +559,7 @@ var importio = (function($) {
 			"type": method,
 			"dataType": "json"
 		}
-		if (method == "GET") {
+		if (method == "GET" || method == "HEAD") {
 			path += objToParams(parameters, "?");
 		} else {
 			config.contentType = parameters ? "application/json" : undefined;
