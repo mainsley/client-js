@@ -404,7 +404,8 @@ var importio = (function($) {
 		$.cometd.websocketEnabled = false;
 		$.cometd.configure({
 				url: getCometEndpoint(),
-				logLevel: currentConfiguration.logging ? "debug" : "warn"
+				logLevel: currentConfiguration.logging ? "debug" : "warn",
+				autoBatch: true
 		});
 		$.cometd.handshake();
 	
