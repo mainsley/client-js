@@ -546,7 +546,7 @@ var importio = (function($) {
 				port = 80;
 			}
 		}
-		
+
 		// Detect CORS support
 		if ("withCredentials" in new XMLHttpRequest() && !notCrossDomain) {
 			return "http" + (currentConfiguration.https ? "s": "") + "://api." + currentConfiguration.host + ":" + port + (path ? path : "");
@@ -560,11 +560,28 @@ var importio = (function($) {
 			"type": method,
 			"dataType": "json"
 		}
+
+		var parameters = parameters || {};
+		var extraParams = {};
+		var hasExtras = false;
+		var auth = currentConfiguration.auth;
+		if (auth instanceof Object && auth.hasOwnProperty("userGuid") && auth.hasOwnProperty("apiKey")) {
+			extraParams = { "_user": auth.userGuid, "_apikey": auth.apiKey };
+			hasExtras = true;
+		}
+
 		if (method == "GET" || method == "HEAD") {
+			if (hasExtras) {
+				parameters._user = extraParams._user;
+				parameters._apikey = extraParams._apikey;
+			}
 			path += objToParams(parameters, "?");
 		} else {
 			config.contentType = parameters ? "application/json" : undefined;
 			config.data = parameters ? JSON.stringify(parameters) : undefined;
+			if (hasExtras) {
+				path += objToParams(extraParams, "?");
+			}
 		}
 		return $.ajax(getEndpoint(path), config);
 	}
