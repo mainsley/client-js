@@ -412,6 +412,13 @@ var importio = (function($) {
 		// Add callbacks
 		$.cometd.addListener('/meta/handshake', comet.callbacks.handshake);
 		$.cometd.addListener('/meta/connect', comet.callbacks.connect);
+
+		// Add in debugging to help developers figure out what went wrong
+		$.cometd.onListenerException = function(exception, subscriptionHandle, isListener, message) {
+			if (currentConfiguration.logging && window.console && console.error) {
+				console.error("Unable to call listener, exception thrown", { "exception": exception, "subscriptionHandle": subscriptionHandle, "isListener": isListener, "message": message });
+			}
+		}
 		
 		comet.started = true;
 	}
