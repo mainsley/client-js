@@ -562,10 +562,13 @@ var importio = (function($) {
 		}
 	}
 	
-	function doAjax(method, path, parameters) {
+	function doAjax(method, path, parameters, standardPost) {
 		var config = {
-			"type": method,
-			"dataType": "json"
+			"type": method
+		}
+
+		if (!standardPost) {
+			config.dataType = "json";
 		}
 
 		var parameters = parameters || {};
@@ -585,7 +588,11 @@ var importio = (function($) {
 			path += objToParams(parameters, "?");
 		} else {
 			config.contentType = parameters ? "application/json" : undefined;
-			config.data = parameters ? JSON.stringify(parameters) : undefined;
+			if (standardPost) {
+				config.data = parameters;
+			} else {
+				config.data = parameters ? JSON.stringify(parameters) : undefined;
+			}
 			if (hasExtras) {
 				path += objToParams(extraParams, "?");
 			}
@@ -810,7 +817,7 @@ var importio = (function($) {
 		},
 		"apikey": {
 			"get": function(password) {
-				return doAjax("GET", "/auth/apikeyadmin", { "password": password });
+				return doAjax("PUT", "/auth/apikeyadmin", { "password": password });
 			},
 			"create": function(password) {
 				// This is a special case because it uses form format rather than JSON
