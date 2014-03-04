@@ -817,7 +817,7 @@ var importio = (function($) {
 		},
 		"apikey": {
 			"get": function(password) {
-				return doAjax("PUT", "/auth/apikeyadmin", { "password": password });
+				return doAjax("PUT", "/auth/apikeyadmin", { "password": password }, true);
 			},
 			"create": function(password) {
 				// This is a special case because it uses form format rather than JSON
