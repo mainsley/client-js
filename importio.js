@@ -564,11 +564,8 @@ var importio = (function($) {
 	
 	function doAjax(method, path, parameters, standardPost) {
 		var config = {
-			"type": method
-		}
-
-		if (!standardPost) {
-			config.dataType = "json";
+			"type": method,
+			"dataType": "json"
 		}
 
 		var parameters = parameters || {};
