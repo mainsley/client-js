@@ -19,7 +19,7 @@ var importio = (function($) {
 	var q = function($, config, query, deferred, callbacks, sys_finished) {
 
 		// Setup the ID
-		var id = ((new Date()).getTime()) + (Math.random() * 1e17);
+		var id = ((new Date()).getTime()) + (Math.random() * 1e19);
 		
 		// Whether or not finished
 		var finished = false;
