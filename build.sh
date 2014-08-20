@@ -18,7 +18,6 @@ cat lib/cometd.js \
 	angular/services/connection.js \
 	angular/services/query.js > dist/io.js
 
-#uglifyjs -o dist/importio.js dist/io.js
-cp dist/io.js dist/importio.js
+uglifyjs -o dist/importio.js dist/io.js
 
 rm dist/io.js
