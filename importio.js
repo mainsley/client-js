@@ -801,11 +801,17 @@ var importio = (function($) {
 		"currentuser": function() {
 			return doAjax("GET", "/auth/currentuser");
 		},
-		"login": function(username, password) {
+		"login": function(username, password, rememberme) {
+            var dataToSend = { "username": username, "password": password };
+
+            if (rememberme) {
+                dataToSend["remember"] = true;
+            }
+
 			// This is a special case because it uses form format rather than JSON
 			return $.ajax(getEndpoint("/auth/login"), {
 				"type": "POST",
-				"data": { "username": username, "password": password },
+				"data": dataToSend,
 				"dataType": "json"
 			});
 		},
